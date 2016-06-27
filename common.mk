@@ -14,6 +14,7 @@ common_includes := $(display_top)/libqdutils
 common_includes += $(display_top)/libqservice
 ifneq ($(TARGET_IS_HEADLESS), true)
     common_includes += $(display_top)/libcopybit
+    common_includes += $(display_top)/libdrmutils
 endif
 
 common_includes += $(display_top)/include
@@ -37,6 +38,10 @@ ifneq ($(TARGET_USES_GRALLOC1), true)
     common_flags += -isystem $(display_top)/libgralloc
 else
     common_flags += -isystem $(display_top)/libgralloc1
+endif
+
+ifneq ($(TARGET_IS_HEADLESS), true)
+    common_flags += -DCOMPILE_DRM
 endif
 
 ifeq ($(TARGET_USES_POST_PROCESSING),true)
