@@ -1066,4 +1066,10 @@ DisplayError DisplayBase::GetDisplayPort(DisplayPort *port) {
   return kErrorNone;
 }
 
+bool DisplayBase::IsPrimaryDisplay() {
+  lock_guard<recursive_mutex> obj(recursive_mutex_);
+
+  return hw_panel_info_.is_primary_panel;
+}
+
 }  // namespace sdm
