@@ -262,6 +262,7 @@ struct HWSessionConfig {
   bool secure = false;
   uint32_t frame_rate = 0;
   LayerTransform transform;
+  bool secure_camera = false;
 
   bool operator==(const HWSessionConfig& config) const {
     return (src_rect == config.src_rect &&
@@ -269,7 +270,8 @@ struct HWSessionConfig {
             buffer_count == config.buffer_count &&
             secure == config.secure &&
             frame_rate == config.frame_rate &&
-            transform == config.transform);
+            transform == config.transform &&
+            secure_camera == config.secure_camera);
   }
 
   bool operator!=(const HWSessionConfig& config) const {
