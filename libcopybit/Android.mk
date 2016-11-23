@@ -20,6 +20,7 @@ LOCAL_COPY_HEADERS_TO         := $(common_header_export_path)
 LOCAL_COPY_HEADERS            := copybit.h copybit_priv.h c2d2.h
 include $(BUILD_COPY_HEADERS)
 
+ifneq ($(TARGET_USES_GRALLOC1), true)
 include $(CLEAR_VARS)
 LOCAL_MODULE                  := copybit.$(TARGET_BOARD_PLATFORM)
 LOCAL_MODULE_RELATIVE_PATH    := hw
@@ -46,4 +47,5 @@ else
             include $(BUILD_SHARED_LIBRARY)
         endif
     endif
+endif
 endif
