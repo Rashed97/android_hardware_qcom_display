@@ -187,6 +187,7 @@ struct HWResourceInfo {
   HWRotatorInfo hw_rot_info;
   HWDestScalarInfo hw_dest_scalar_info;
   bool has_avr = false;
+  bool has_hdr = false;
 
   void Reset() { *this = HWResourceInfo(); }
 };
@@ -213,6 +214,13 @@ enum HWS3DMode {
   kS3DModeMax,
 };
 
+struct HWColorPrimaries {
+  uint32_t white_point[2] = {};       // White point
+  uint32_t red[2] = {};               // Red color primary
+  uint32_t green[2] = {};             // Green color primary
+  uint32_t blue[2] = {};              // Blue color primary
+};
+
 struct HWPanelInfo {
   DisplayPort port = kPortDefault;    // Display port
   HWDisplayMode mode = kModeDefault;  // Display mode
@@ -234,6 +242,11 @@ struct HWPanelInfo {
   char panel_name[256] = {0};         // Panel name
   HWS3DMode s3d_mode = kS3DModeNone;  // Panel's current s3d mode.
   int panel_max_brightness = 0;       // Max panel brightness
+  bool hdr_enabled = false;           // HDR feature supported
+  uint32_t peak_luminance = 0;        // Panel's peak luminance level
+  uint32_t average_luminance = 0;     // Panel's average luminance level
+  uint32_t blackness_level = 0;       // Panel's blackness level
+  HWColorPrimaries primaries = {};    // WRGB color primaries
 
   bool operator !=(const HWPanelInfo &panel_info) {
     return ((port != panel_info.port) || (mode != panel_info.mode) ||
@@ -503,4 +516,3 @@ struct HWMixerAttributes {
 }  // namespace sdm
 
 #endif  // __HW_INFO_TYPES_H__
-
