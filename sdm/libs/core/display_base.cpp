@@ -110,6 +110,8 @@ DisplayError DisplayBase::Init() {
     DLOGW("InitColorModes failed for display = %d", display_type_);
   }
 
+  Debug::Get()->GetProperty("sdm.disable_hdr_lut_gen", &disable_hdr_lut_gen_);
+
   return kErrorNone;
 
 CleanupOnError:
@@ -1122,6 +1124,11 @@ DisplayError DisplayBase::HandleHDR(LayerStack *layer_stack) {
 
   if (!color_mgr_) {
     // TODO(user): Handle the case where color_mgr is not present
+    return kErrorNone;
+  }
+
+  if (disable_hdr_lut_gen_) {
+    // Do not apply HDR Mode when hdr lut generation is disabled
     return kErrorNone;
   }
 
