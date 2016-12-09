@@ -35,7 +35,8 @@ namespace sdm {
 
 DisplayError CompManager::Init(const HWResourceInfo &hw_res_info,
                                ExtensionInterface *extension_intf,
-                               BufferSyncHandler *buffer_sync_handler) {
+                               BufferSyncHandler *buffer_sync_handler,
+                               SocketHandler *socket_handler) {
   SCOPE_LOCK(locker_);
 
   DisplayError error = kErrorNone;
@@ -500,4 +501,3 @@ DisplayError CompManager::SetDetailEnhancerData(Handle display_ctx,
 }
 
 }  // namespace sdm
-

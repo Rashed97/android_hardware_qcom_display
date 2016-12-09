@@ -30,6 +30,7 @@ LOCAL_SRC_FILES               := hwc_session.cpp \
                                  blit_engine_c2d.cpp \
                                  cpuhint.cpp \
                                  hwc_tonemapper.cpp \
+                                 hwc_socket_handler.cpp \
                                  hwc_display_external_test.cpp
 
 include $(BUILD_SHARED_LIBRARY)
