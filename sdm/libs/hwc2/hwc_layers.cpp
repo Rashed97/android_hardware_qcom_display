@@ -138,8 +138,9 @@ HWC2::Error HWCLayer::SetLayerBlendMode(HWC2::BlendMode mode) {
 HWC2::Error HWCLayer::SetLayerColor(hwc_color_t color) {
   layer_->solid_fill_color = GetUint32Color(color);
   layer_->input_buffer->format = kFormatARGB8888;
-  DLOGV_IF(kTagCompManager, "[%" PRIu64 "][%" PRIu64 "] Layer color set to %x", display_id_, id_,
-           layer_->solid_fill_color);
+  DLOGD("Layer color set to: %u", layer_->solid_fill_color);
+  DLOGD("[%" PRIu64 "][%" PRIu64 "] Layer color set to %u  %" PRIu64, display_id_, id_,
+        layer_->solid_fill_color);
   return HWC2::Error::None;
 }
 
@@ -283,7 +284,7 @@ uint32_t HWCLayer::GetUint32Color(const hwc_color_t &source) {
   uint32_t r = UINT32(source.r) << 16;
   uint32_t g = UINT32(source.g) << 8;
   uint32_t b = UINT32(source.b);
-  uint32_t color = a | r | g | b;
+  uint32_t color = a & r & g & b;
   return color;
 }
 
