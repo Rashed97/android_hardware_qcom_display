@@ -486,24 +486,16 @@ int HWCDisplay::PrePrepareLayerStack(hwc_display_contents_1_t *content_list) {
 
     // For dim layers, SurfaceFlinger
     //    - converts planeAlpha to per pixel alpha,
-    //    - sets appropriate RGB color,
+    //    - sets RGB color to 000,
     //    - sets planeAlpha to 0xff,
     //    - blending to Premultiplied.
     // This can be achieved at hardware by
-    //    - solid fill ARGB to appropriate value,
+    //    - solid fill ARGB to 0xff000000,
     //    - incoming planeAlpha,
     //    - blending to Coverage.
     if (hwc_layer.flags & kDimLayer) {
       layer->input_buffer->format = kFormatARGB8888;
       layer->solid_fill_color = 0xff000000;
-#ifdef QTI_BSP
-      // Get ARGB color from HWC Dim Layer color
-      uint32_t a = UINT32(hwc_layer.color.a) << 24;
-      uint32_t r = UINT32(hwc_layer.color.r) << 16;
-      uint32_t g = UINT32(hwc_layer.color.g) << 8;
-      uint32_t b = UINT32(hwc_layer.color.b);
-      layer->solid_fill_color = a | r | g | b;
-#endif
       SetBlending(HWC_BLENDING_COVERAGE, &layer->blending);
     } else {
       SetBlending(hwc_layer.blending, &layer->blending);
@@ -589,9 +581,8 @@ int HWCDisplay::PrepareLayerStack(hwc_display_contents_1_t *content_list) {
         // To prevent surfaceflinger infinite wait, flush the previous frame during Commit()
         // so that previous buffer and fences are released, and override the error.
         flush_ = true;
-      } else {
-        DLOGI("Prepare failed for Display = %d Error = %d", type_, error);
       }
+
       return 0;
     }
   } else {
@@ -667,8 +658,6 @@ int HWCDisplay::CommitLayerStack(hwc_display_contents_1_t *content_list) {
         // To prevent surfaceflinger infinite wait, flush the previous frame during Commit()
         // so that previous buffer and fences are released, and override the error.
         flush_ = true;
-      } else {
-        DLOGI("Commit failed for Display = %d Error = %d", type_, error);
       }
     }
   }
@@ -1314,7 +1303,7 @@ int HWCDisplay::GetDisplayAttributesForConfig(int config,
 
 // TODO(user): HWC needs to know updating for dyn_fps, cpu hint features,
 // once the features are moved to SDM, the two functions below can be removed.
-uint32_t HWCDisplay::GetUpdatingLayersCount(uint32_t app_layer_count) {
+bool HWCDisplay::SingleLayerUpdating(uint32_t app_layer_count) {
   uint32_t updating_count = 0;
 
   for (uint i = 0; i < app_layer_count; i++) {
@@ -1324,7 +1313,7 @@ uint32_t HWCDisplay::GetUpdatingLayersCount(uint32_t app_layer_count) {
     }
   }
 
-  return updating_count;
+  return (updating_count == 1);
 }
 
 bool HWCDisplay::SingleVideoLayerUpdating(uint32_t app_layer_count) {
@@ -1332,12 +1321,7 @@ bool HWCDisplay::SingleVideoLayerUpdating(uint32_t app_layer_count) {
 
   for (uint i = 0; i < app_layer_count; i++) {
     Layer *layer = layer_stack_.layers[i];
-    // TODO(user): disable DRC feature in S3D playbacl case.S3D video
-    // need play in dedicate resolution and fps, if DRC switch the
-    // mode to an non S3D supported mode, it would break S3D playback.
-    // Need figure out a way to make S3D and DRC co-exist.
-    if (layer->flags.updating && (layer->input_buffer->flags.video == true) &&
-       (layer->input_buffer->s3d_format == kS3dFormatNone)) {
+    if (layer->flags.updating && (layer->input_buffer->flags.video == true)) {
       updating_count++;
     }
   }

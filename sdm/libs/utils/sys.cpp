@@ -70,7 +70,7 @@ bool DynLib::Open(const char *lib_name) {
   Close();
   lib_ = ::dlopen(lib_name, RTLD_NOW);
 
-  return (lib_ != NULL);
+  return (*this);
 }
 
 bool DynLib::Sym(const char *func_name, void **func_ptr) {

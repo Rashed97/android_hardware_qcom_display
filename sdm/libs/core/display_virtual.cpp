@@ -28,6 +28,7 @@
 #include "display_virtual.h"
 #include "hw_interface.h"
 #include "hw_info_interface.h"
+#include "fb/hw_virtual.h"
 
 #define __CLASS__ "DisplayVirtual"
 
@@ -43,8 +44,8 @@ DisplayVirtual::DisplayVirtual(DisplayEventHandler *event_handler, HWInfoInterfa
 DisplayError DisplayVirtual::Init() {
   lock_guard<recursive_mutex> obj(recursive_mutex_);
 
-  DisplayError error = HWInterface::Create(kVirtual, hw_info_intf_, buffer_sync_handler_,
-                                           &hw_intf_);
+  DisplayError error = HWVirtual::Create(&hw_intf_, hw_info_intf_,
+                                         DisplayBase::buffer_sync_handler_);
   if (error != kErrorNone) {
     return error;
   }
@@ -53,8 +54,17 @@ DisplayError DisplayVirtual::Init() {
 
   error = DisplayBase::Init();
   if (error != kErrorNone) {
-    HWInterface::Destroy(hw_intf_);
+    HWVirtual::Destroy(hw_intf_);
   }
+
+  return error;
+}
+
+DisplayError DisplayVirtual::Deinit() {
+  lock_guard<recursive_mutex> obj(recursive_mutex_);
+
+  DisplayError error = DisplayBase::Deinit();
+  HWVirtual::Destroy(hw_intf_);
 
   return error;
 }
@@ -129,16 +139,6 @@ DisplayError DisplayVirtual::SetActiveConfig(DisplayConfigVariableInfo *variable
 
   return kErrorNone;
 }
-
-DisplayError DisplayVirtual::Prepare(LayerStack *layer_stack) {
-  lock_guard<recursive_mutex> obj(recursive_mutex_);
-
-  // Clean hw layers for reuse.
-  hw_layers_ = HWLayers();
-
-  return DisplayBase::Prepare(layer_stack);
-}
-
 
 }  // namespace sdm
 

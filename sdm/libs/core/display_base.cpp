@@ -130,8 +130,8 @@ DisplayError DisplayBase::Deinit() {
   }
 
   comp_manager_->UnregisterDisplay(display_comp_ctx_);
+
   HWEventsInterface::Destroy(hw_events_intf_);
-  HWInterface::Destroy(hw_intf_);
 
   return kErrorNone;
 }
@@ -219,6 +219,8 @@ DisplayError DisplayBase::Prepare(LayerStack *layer_stack) {
     disable_pu_one_frame_ = false;
   }
 
+  // Clean hw layers for reuse.
+  hw_layers_ = HWLayers();
   hw_layers_.info.stack = layer_stack;
   hw_layers_.output_compression = 1.0f;
 

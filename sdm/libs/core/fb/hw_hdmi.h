@@ -37,7 +37,9 @@ using std::vector;
 
 class HWHDMI : public HWDevice {
  public:
-  HWHDMI(BufferSyncHandler *buffer_sync_handler, HWInfoInterface *hw_info_intf);
+  static DisplayError Create(HWInterface **intf, HWInfoInterface *hw_info_intf,
+                             BufferSyncHandler *buffer_sync_handler);
+  static DisplayError Destroy(HWInterface *intf);
 
  protected:
   enum HWFramerateUpdate {
@@ -49,30 +51,12 @@ class HWHDMI : public HWDevice {
     kModeVFP,
     // Switch framerate by tuning horizontal front porch
     kModeHFP,
-    // Switch framerate by tuning horizontal front porch and clock
-    kModeClockHFP,
-    // Switch framerate by tuning horizontal front porch and re-caculate clock
-    kModeHFPCalcClock,
     kModeMAX
   };
 
-  /**
-   * struct DynamicFPSData - defines dynamic fps related data
-   * @hor_front_porch: horizontal front porch
-   * @hor_back_porch: horizontal back porch
-   * @hor_pulse_width: horizontal pulse width
-   * @clk_rate_hz: panel clock rate in HZ
-   * @fps: frames per second
-   */
-  struct DynamicFPSData {
-    uint32_t hor_front_porch;
-    uint32_t hor_back_porch;
-    uint32_t hor_pulse_width;
-    uint32_t clk_rate_hz;
-    uint32_t fps;
-  };
-
+  HWHDMI(BufferSyncHandler *buffer_sync_handler, HWInfoInterface *hw_info_intf);
   virtual DisplayError Init();
+  virtual DisplayError Deinit();
   virtual DisplayError GetNumDisplayAttributes(uint32_t *count);
   // Requirement to call this only after the first config has been explicitly set by client
   virtual DisplayError GetActiveConfig(uint32_t *active_config);
@@ -103,9 +87,6 @@ class HWHDMI : public HWDevice {
   bool IsSupportedS3DMode(HWS3DMode s3d_mode);
   void UpdateMixerAttributes();
 
-  DisplayError GetDynamicFrameRateMode(uint32_t refresh_rate, uint32_t*mode,
-                                       DynamicFPSData *data, uint32_t *config_index);
-  static const int kThresholdRefreshRate = 1000;
   vector<uint32_t> hdmi_modes_;
   // Holds the hdmi timing information. Ex: resolution, fps etc.,
   vector<msm_hdmi_mode_timing_info> supported_video_modes_;

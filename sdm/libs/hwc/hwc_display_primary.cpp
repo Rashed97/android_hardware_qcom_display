@@ -167,12 +167,8 @@ int HWCDisplayPrimary::Prepare(hwc_display_contents_1_t *content_list) {
     layer_stack_.flags.post_processed_output = post_processed_output_;
   }
 
-  uint32_t num_updating_layers = GetUpdatingLayersCount(UINT32(content_list->numHwLayers - 1));
-  bool one_updating_layer = (num_updating_layers == 1);
-
-  if (num_updating_layers != 0) {
-    ToggleCPUHint(one_updating_layer);
-  }
+  bool one_updating_layer = SingleLayerUpdating(UINT32(content_list->numHwLayers - 1));
+  ToggleCPUHint(one_updating_layer);
 
   uint32_t refresh_rate = GetOptimalRefreshRate(one_updating_layer);
   if (current_refresh_rate_ != refresh_rate) {
@@ -463,12 +459,12 @@ int HWCDisplayPrimary::FrameCaptureAsync(const BufferInfo& output_buffer_info,
   GetPanelResolution(&panel_width, &panel_height);
   GetFrameBufferResolution(&fb_width, &fb_height);
 
-  if (post_processed_output && (output_buffer_info.buffer_config.width < panel_width ||
-                                output_buffer_info.buffer_config.height < panel_height)) {
+  if (post_processed_output && (output_buffer_info_.buffer_config.width < panel_width ||
+                                output_buffer_info_.buffer_config.height < panel_height)) {
     DLOGE("Buffer dimensions should not be less than panel resolution");
     return -1;
-  } else if (!post_processed_output && (output_buffer_info.buffer_config.width < fb_width ||
-                                        output_buffer_info.buffer_config.height < fb_height)) {
+  } else if (!post_processed_output && (output_buffer_info_.buffer_config.width < fb_width ||
+                                        output_buffer_info_.buffer_config.height < fb_height)) {
     DLOGE("Buffer dimensions should not be less than FB resolution");
     return -1;
   }

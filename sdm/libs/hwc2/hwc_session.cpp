@@ -23,7 +23,6 @@
 #include <utils/constants.h>
 #include <utils/String16.h>
 #include <cutils/properties.h>
-#include <cutils/iosched_policy.h>
 #include <hardware_legacy/uevent.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
@@ -216,7 +215,9 @@ static hwc2_function_pointer_t AsFP(T function) {
 // HWC2 functions returned in GetFunction
 // Defined in the same order as in the HWC2 header
 
-static int32_t AcceptDisplayChanges(hwc2_device_t *device, hwc2_display_t display) {
+int32_t HWCSession::AcceptDisplayChanges(hwc2_device_t *device,
+                                         hwc2_display_t display) {
+  SCOPE_LOCK(locker_);
   return HWCSession::CallDisplayFunction(device, display, &HWCDisplay::AcceptDisplayChanges);
 }
 
@@ -236,9 +237,13 @@ int32_t HWCSession::CreateVirtualDisplay(hwc2_device_t *device, uint32_t width, 
 
   HWCSession *hwc_session = static_cast<HWCSession *>(device);
   auto status = hwc_session->CreateVirtualDisplayObject(width, height, format);
-  if (status == HWC2::Error::None)
+  if (status == HWC2::Error::None) {
     *out_display_id = HWC_DISPLAY_VIRTUAL;
-  DLOGI("Created virtual display id:% " PRIu64 " with res: %dx%d", *out_display_id, width, height);
+    DLOGI("Created virtual display id:% " PRIu64 " with res: %dx%d",
+          *out_display_id, width, height);
+  } else {
+    DLOGE("Failed to create virtual display: %s", to_string(status).c_str());
+  }
   return INT32(status);
 }
 
@@ -259,6 +264,7 @@ int32_t HWCSession::DestroyVirtualDisplay(hwc2_device_t *device, hwc2_display_t 
 
   if (hwc_session->hwc_display_[display]) {
     HWCDisplayVirtual::Destroy(hwc_session->hwc_display_[display]);
+    hwc_session->hwc_display_[display] = nullptr;
     return HWC2_ERROR_NONE;
   } else {
     return HWC2_ERROR_BAD_DISPLAY;
@@ -586,7 +592,7 @@ hwc2_function_pointer_t HWCSession::GetFunction(struct hwc2_device *device,
 
   switch (descriptor) {
     case HWC2::FunctionDescriptor::AcceptDisplayChanges:
-      return AsFP<HWC2_PFN_ACCEPT_DISPLAY_CHANGES>(AcceptDisplayChanges);
+      return AsFP<HWC2_PFN_ACCEPT_DISPLAY_CHANGES>(HWCSession::AcceptDisplayChanges);
     case HWC2::FunctionDescriptor::CreateLayer:
       return AsFP<HWC2_PFN_CREATE_LAYER>(CreateLayer);
     case HWC2::FunctionDescriptor::CreateVirtualDisplay:
@@ -1378,8 +1384,6 @@ void *HWCSession::HWCUeventThreadHandler() {
   int length = 0;
   prctl(PR_SET_NAME, uevent_thread_name_, 0, 0, 0);
   setpriority(PRIO_PROCESS, 0, HAL_PRIORITY_URGENT_DISPLAY);
-  android_set_rt_ioprio(0, 1);
-
   if (!uevent_init()) {
     DLOGE("Failed to init uevent");
     pthread_exit(0);

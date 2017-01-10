@@ -33,7 +33,6 @@
 #include <utils/constants.h>
 #include <utils/String16.h>
 #include <cutils/properties.h>
-#include <cutils/iosched_policy.h>
 #include <hardware_legacy/uevent.h>
 #include <sys/resource.h>
 #include <sys/prctl.h>
@@ -279,7 +278,7 @@ int HWCSession::Prepare(hwc_composer_device_1 *device, size_t num_displays,
 
     if (hwc_session->color_mgr_) {
       HWCDisplay *primary_display = hwc_session->hwc_display_[HWC_DISPLAY_PRIMARY];
-      if (primary_display && !hwc_session->is_hdmi_primary_) {
+      if (primary_display) {
         int ret = hwc_session->color_mgr_->SolidFillLayersPrepare(displays, primary_display);
         if (ret)
           return 0;
@@ -476,6 +475,11 @@ int HWCSession::SetPowerMode(hwc_composer_device_1 *device, int disp, int mode) 
   int status = -EINVAL;
   if (hwc_session->hwc_display_[disp]) {
     status = hwc_session->hwc_display_[disp]->SetPowerMode(mode);
+  }
+  if (disp == HWC_DISPLAY_PRIMARY && hwc_session->hwc_display_[HWC_DISPLAY_VIRTUAL]) {
+    // Set the power mode for virtual display while setting power mode for primary, as SF
+    // does not invoke SetPowerMode() for virtual display.
+    status = hwc_session->hwc_display_[HWC_DISPLAY_VIRTUAL]->SetPowerMode(mode);
   }
 
   return status;
@@ -1340,8 +1344,6 @@ void* HWCSession::HWCUeventThreadHandler() {
   int length = 0;
   prctl(PR_SET_NAME, uevent_thread_name_, 0, 0, 0);
   setpriority(PRIO_PROCESS, 0, HAL_PRIORITY_URGENT_DISPLAY);
-  android_set_rt_ioprio(0, 1);
-
   if (!uevent_init()) {
     DLOGE("Failed to init uevent");
     pthread_exit(0);
@@ -1419,7 +1421,6 @@ void HWCSession::ResetPanel() {
 int HWCSession::HotPlugHandler(bool connected) {
   int status = 0;
   bool notify_hotplug = false;
-  bool refresh_screen = false;
 
   // To prevent sending events to client while a lock is held, acquire scope locks only within
   // below scope so that those get automatically unlocked after the scope ends.
@@ -1463,11 +1464,6 @@ int HWCSession::HotPlugHandler(bool connected) {
           return -1;
         }
 
-        status = hwc_display_[HWC_DISPLAY_PRIMARY]->SetPowerMode(HWC_POWER_MODE_NORMAL);
-        if (status) {
-          DLOGE("power-on on primary failed with error = %d", status);
-        }
-
         is_hdmi_yuv_ = IsDisplayYUV(HWC_DISPLAY_PRIMARY);
 
         // Next, go ahead and enable vsync on external display. This is expliclity required
@@ -1480,7 +1476,6 @@ int HWCSession::HotPlugHandler(bool connected) {
         }
         // Don't do hotplug notification for HDMI as primary case for now
         notify_hotplug = false;
-        refresh_screen = true;
       } else {
         if (hwc_display_[HWC_DISPLAY_EXTERNAL]) {
           DLOGE("HDMI is already connected");
@@ -1539,7 +1534,7 @@ int HWCSession::HotPlugHandler(bool connected) {
     }
   }
 
-  if (connected && (notify_hotplug || refresh_screen)) {
+  if (connected && notify_hotplug) {
     // trigger screen refresh to ensure sufficient resources are available to process new
     // new display connection.
     hwc_procs_->invalidate(hwc_procs_);

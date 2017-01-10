@@ -49,14 +49,6 @@ enum DisplayClass {
 
 class HWCDisplay : public DisplayEventHandler {
  public:
-  enum {
-    SET_METADATA_DYN_REFRESH_RATE,
-    SET_BINDER_DYN_REFRESH_RATE,
-    SET_DISPLAY_MODE,
-    SET_QDCM_SOLID_FILL_INFO,
-    UNSET_QDCM_SOLID_FILL_INFO,
-  };
-
   virtual ~HWCDisplay() { }
   virtual int Init();
   virtual int Deinit();
@@ -170,7 +162,7 @@ class HWCDisplay : public DisplayEventHandler {
   DisplayError SetMetaData(const private_handle_t *pvt_handle, Layer *layer);
   bool NeedsFrameBufferRefresh(hwc_display_contents_1_t *content_list);
   bool IsLayerUpdating(hwc_display_contents_1_t *content_list, const Layer *layer);
-  uint32_t GetUpdatingLayersCount(uint32_t app_layer_count);
+  bool SingleLayerUpdating(uint32_t app_layer_count);
   bool SingleVideoLayerUpdating(uint32_t app_layer_count);
   bool IsSurfaceUpdated(const std::vector<LayerRect> &dirty_regions);
 

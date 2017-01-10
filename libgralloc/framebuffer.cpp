@@ -34,9 +34,7 @@
 #include <linux/fb.h>
 #include <linux/msm_mdp.h>
 
-#ifndef TARGET_HEADLESS
 #include <GLES/gl.h>
-#endif
 
 #include "gralloc_priv.h"
 #include "fb_priv.h"
@@ -101,9 +99,7 @@ static int fb_compositionComplete(struct framebuffer_device_t* dev)
     if(!dev) {
         return -1;
     }
-#ifndef TARGET_HEADLESS
     glFinish();
-#endif
 
     return 0;
 }

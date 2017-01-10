@@ -48,9 +48,6 @@
 #include <string>
 
 #include "hw_device.h"
-#include "hw_primary.h"
-#include "hw_hdmi.h"
-#include "hw_virtual.h"
 #include "hw_info_interface.h"
 
 #define __CLASS__ "HWDevice"
@@ -60,46 +57,6 @@ using std::to_string;
 using std::fstream;
 
 namespace sdm {
-
-DisplayError HWInterface::Create(DisplayType type, HWInfoInterface *hw_info_intf,
-                                        BufferSyncHandler *buffer_sync_handler,
-                                        HWInterface **intf) {
-  DisplayError error = kErrorNone;
-  HWDevice *hw = nullptr;
-
-  switch (type) {
-    case kPrimary:
-      hw = new HWPrimary(buffer_sync_handler, hw_info_intf);
-      break;
-    case kHDMI:
-      hw = new HWHDMI(buffer_sync_handler, hw_info_intf);
-      break;
-    case kVirtual:
-      hw = new HWVirtual(buffer_sync_handler, hw_info_intf);
-      break;
-    default:
-      DLOGE("Undefined display type");
-      return kErrorUndefined;
-  }
-
-  error = hw->Init();
-  if (error != kErrorNone) {
-    delete hw;
-    DLOGE("Init on HW Intf type %d failed", type);
-    return error;
-  }
-  *intf = hw;
-
-  return error;
-}
-
-DisplayError HWInterface::Destroy(HWInterface *intf) {
-  HWDevice *hw = static_cast<HWDevice *>(intf);
-  hw->Deinit();
-  delete hw;
-
-  return kErrorNone;
-}
 
 HWDevice::HWDevice(BufferSyncHandler *buffer_sync_handler)
   : fb_node_index_(-1), fb_path_("/sys/devices/virtual/graphics/fb"),
@@ -836,8 +793,6 @@ void HWDevice::GetHWPanelInfoByNode(int device_node, HWPanelInfo *panel_info) {
         panel_info->needs_roi_merge = atoi(tokens[1]);
       } else if (!strncmp(tokens[0], "dyn_fps_en", strlen("dyn_fps_en"))) {
         panel_info->dynamic_fps = atoi(tokens[1]);
-      } else if (!strncmp(tokens[0], "dfps_porch_mode", strlen("dfps_porch_mode"))) {
-        panel_info->dfps_porch_mode = atoi(tokens[1]);
       } else if (!strncmp(tokens[0], "min_fps", strlen("min_fps"))) {
         panel_info->min_fps = UINT32(atoi(tokens[1]));
       } else if (!strncmp(tokens[0], "max_fps", strlen("max_fps"))) {
@@ -1103,10 +1058,6 @@ DisplayError HWDevice::SetPPFeatures(PPFeaturesConfig *feature_list) {
 DisplayError HWDevice::SetVSyncState(bool enable) {
   int vsync_on = enable ? 1 : 0;
   if (Sys::ioctl_(device_fd_, MSMFB_OVERLAY_VSYNC_CTRL, &vsync_on) < 0) {
-    if (errno == ESHUTDOWN) {
-      DLOGI_IF(kTagDriverConfig, "Driver is processing shutdown sequence");
-      return kErrorShutDown;
-    }
     IOCTL_LOGE(MSMFB_OVERLAY_VSYNC_CTRL, device_type_);
     return kErrorHardware;
   }
@@ -1195,10 +1146,6 @@ DisplayError HWDevice::SetScaleLutConfig(HWScaleLutInfo *lut_info) {
   cfg.payload = reinterpret_cast<uint64_t>(&mdp_lut_info);
 
   if (Sys::ioctl_(device_fd_, MSMFB_MDP_SET_CFG, &cfg) < 0) {
-    if (errno == ESHUTDOWN) {
-      DLOGI_IF(kTagDriverConfig, "Driver is processing shutdown sequence");
-      return kErrorShutDown;
-    }
     IOCTL_LOGE(MSMFB_MDP_SET_CFG, device_type_);
     return kErrorHardware;
   }
