@@ -51,7 +51,6 @@ class StrategyInterface {
   virtual DisplayError Reconfigure(HWDisplayMode mode, HWS3DMode s3d_mode,
                                    const HWMixerAttributes &mixer_attributes,
                                    const DisplayConfigVariableInfo &fb_config) = 0;
-  virtual DisplayError Purge() = 0;
 
  protected:
   virtual ~StrategyInterface() { }
@@ -60,3 +59,4 @@ class StrategyInterface {
 }  // namespace sdm
 
 #endif  // __STRATEGY_INTERFACE_H__
+

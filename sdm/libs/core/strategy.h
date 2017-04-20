@@ -48,7 +48,6 @@ class Strategy {
                            const HWDisplayAttributes &hw_display_attributes,
                            const HWMixerAttributes &mixer_attributes,
                            const DisplayConfigVariableInfo &fb_config);
-  DisplayError Purge();
 
  private:
   void GenerateROI();
@@ -71,3 +70,4 @@ class Strategy {
 }  // namespace sdm
 
 #endif  // __STRATEGY_H__
+
